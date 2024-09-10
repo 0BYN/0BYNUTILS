@@ -3,7 +3,7 @@ from datetime import datetime
 import disnake
 from disnake import Embed
 
-from config_manager import get_config
+from . import get_config
 
 cfg = get_config()
 
