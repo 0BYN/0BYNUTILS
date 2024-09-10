@@ -1,0 +1,4 @@
+# Ignore Python build directories
+dist/
+build/
+*.egg-info/
