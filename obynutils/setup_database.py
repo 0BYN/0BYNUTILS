@@ -77,7 +77,7 @@ def _discover_and_import_models():
     logger = logging.getLogger("database")
     logger.info("Discovering and importing models from installed plugins and local modules...")
     # Load models from modules
-    for root, dirs, files in os.walk('modules'):
+    for _, _, files in os.walk('modules'):
         for file in files:
             if file.endswith('.py') and not file.startswith('__init__'):
                 module_name = os.path.splitext(file)[0]

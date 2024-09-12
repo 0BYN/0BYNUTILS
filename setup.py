@@ -9,6 +9,8 @@ setup(
         "redis",
         "SQLAlchemy",
         "asyncpg",
+        "quart",
+        "quart-cors",
     ],
     description="A set of utility functions for Obyn bots",
     author="GizmoShiba",
