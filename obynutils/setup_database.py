@@ -76,9 +76,12 @@ def _discover_and_import_models():
     """Automatically discover and import models from both installed plugins and modules/dev."""
     logger = logging.getLogger("database")
     logger.info("Discovering and importing models from installed plugins and local modules...")
-
-    # Load models from modules/dev
-    _import_local_models('modules.dev')
+    # Load models from modules
+    for root, dirs, files in os.walk('modules'):
+        for file in files:
+            if file.endswith('.py') and not file.startswith('__init__'):
+                module_name = os.path.splitext(file)[0]
+                _import_local_models(f'modules.{module_name}')
 
     # Load models from installed plugins (pip-installed)
     for dist in pkg_resources.working_set:
