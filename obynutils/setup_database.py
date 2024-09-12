@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, text, select
 from sqlalchemy.orm import sessionmaker, declarative_base
 import logging
 import pkg_resources
@@ -84,7 +84,7 @@ def _discover_and_import_models():
     for dist in pkg_resources.working_set:
         if dist.project_name.startswith("obyn-"):  # Assuming plugin naming convention
             plugin_name = dist.project_name.replace("obyn-", "")
-            _import_plugin_models(f"modules.{plugin_name}")
+            _import_plugin_models(f"{plugin_name}")
 
 def _import_local_models(module_name):
     """Import models from a local module like modules/dev."""
@@ -107,3 +107,90 @@ def _import_plugin_models(plugin_name):
         logger.warning(f"No models found in {plugin_name}")
     except Exception as e:
         logger.error(f"Failed to import models from {plugin_name}: {e}")
+
+
+# Utility functions for database interactions
+async def get_record(session: AsyncSession, model, **filters):
+    """
+    Retrieve a single record that matches the filters.
+
+    :param session: AsyncSession object.
+    :param model: SQLAlchemy model class.
+    :param filters: Filter conditions (as keyword arguments).
+    :return: The first matching record or None.
+    """
+    async with session.begin():
+        query = select(model).filter_by(**filters)
+        result = await session.execute(query)
+        return result.scalar()
+
+async def get_all_records(session: AsyncSession, model, **filters):
+    """
+    Retrieve all records that match the filters.
+
+    :param session: AsyncSession object.
+    :param model: SQLAlchemy model class.
+    :param filters: Filter conditions (as keyword arguments).
+    :return: List of matching records.
+    """
+    async with session.begin():
+        query = select(model).filter_by(**filters)
+        result = await session.execute(query)
+        return result.scalars().all()
+
+async def set_record(session: AsyncSession, model, data: dict):
+    """
+    Insert a new record into the database.
+
+    :param session: AsyncSession object.
+    :param model: SQLAlchemy model class.
+    :param data: A dictionary of field values for the new record.
+    :return: The newly created record.
+    """
+    async with session.begin():
+        new_record = model(**data)
+        session.add(new_record)
+        await session.commit()
+        return new_record
+
+async def update_record(session: AsyncSession, model, filters: dict, data: dict):
+    """
+    Update an existing record in the database.
+
+    :param session: AsyncSession object.
+    :param model: SQLAlchemy model class.
+    :param filters: A dictionary of filter conditions to find the record.
+    :param data: A dictionary of field values to update.
+    :return: The updated record or None if not found.
+    """
+    async with session.begin():
+        query = select(model).filter_by(**filters)
+        result = await session.execute(query)
+        record = result.scalar()
+
+        if record:
+            for key, value in data.items():
+                setattr(record, key, value)
+            await session.commit()
+            return record
+        return None
+
+async def delete_record(session: AsyncSession, model, **filters):
+    """
+    Delete a record from the database that matches the filters.
+
+    :param session: AsyncSession object.
+    :param model: SQLAlchemy model class.
+    :param filters: Filter conditions (as keyword arguments).
+    :return: True if deletion was successful, False otherwise.
+    """
+    async with session.begin():
+        query = select(model).filter_by(**filters)
+        result = await session.execute(query)
+        record = result.scalar()
+
+        if record:
+            await session.delete(record)
+            await session.commit()
+            return True
+        return False
