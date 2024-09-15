@@ -77,11 +77,10 @@ def _discover_and_import_models():
     logger = logging.getLogger("database")
     logger.info("Discovering and importing models from installed plugins and local modules...")
     # Load models from modules
-    for _, _, files in os.walk('modules'):
-        for file in files:
-            if file.endswith('.py') and not file.startswith('__init__'):
-                module_name = os.path.splitext(file)[0]
-                _import_local_models(f'modules.{module_name}')
+    # Loop through folders in modules/ and load all .py files that don't start with __init__
+    for folders in os.listdir('modules'):
+        if os.path.isdir(folders):
+            _import_local_models(f'modules.{folders}')
 
     # Load models from installed plugins (pip-installed)
     for dist in pkg_resources.working_set:
